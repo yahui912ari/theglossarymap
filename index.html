@@ -36,31 +36,22 @@
         
         .meaning-text { font-family: var(--font-display); font-style: italic; font-size: 14px; text-align: right; opacity: 0.6; max-width: 55%; border-left: 0.5px solid #eee; padding-left: 10px; }
 
-        .example-card { background: #ffffff; border: 0.5px solid var(--brand-color); padding: 18px 15px; width: 100%; margin-bottom: 8px; }
+        .example-card { position: relative; background: #ffffff; border: 0.5px solid var(--brand-color); padding: 18px 15px; width: 100%; margin-bottom: 8px; }
         
-        /* 假名排版核心修復 */
-        ruby { 
-            ruby-position: over; 
-            ruby-align: center; 
-            ruby-overhang: auto; /* 允許長假名適度重疊，保證不換行 */
+        /* 播放按鈕樣式 */
+        .play-btn { 
+            position: absolute; top: 12px; right: 12px; font-size: 10px; opacity: 0.4; 
+            cursor: pointer; transition: 0.2s; font-family: var(--font-display); font-style: italic;
         }
+        .play-btn:hover { opacity: 1; color: var(--accent-pink); }
+
+        ruby { ruby-position: over; ruby-align: center; ruby-overhang: auto; }
         rt { 
-            font-family: var(--font-display); 
-            font-style: italic; 
-            font-size: 0.58rem; /* 進一步縮小 */
-            color: var(--accent-pink); 
-            line-height: 1;
-            letter-spacing: -0.03em; /* 緊湊排版 */
-            padding-bottom: 0.1em;
-            display: ruby-text;
+            font-family: var(--font-display); font-style: italic; font-size: 0.58rem; 
+            color: var(--accent-pink); line-height: 1; letter-spacing: -0.03em; 
+            padding-bottom: 0.1em; display: ruby-text;
         }
-        .ex-jp { 
-            font-family: var(--font-jp); 
-            font-size: 1.05rem; 
-            line-height: 2.8; 
-            margin-bottom: 10px; 
-            color: #111; 
-        }
+        .ex-jp { font-family: var(--font-jp); font-size: 1.05rem; line-height: 2.8; margin-bottom: 10px; color: #111; letter-spacing: 0.03em; }
         .ex-zh { font-family: var(--font-display); font-style: italic; font-size: 13px; opacity: 0.7; border-top: 0.5px dashed #eee; padding-top: 8px; }
 
         #export-btn { 
@@ -101,8 +92,25 @@
 <script>
     const API_KEY = 'sk-f1685a4ad6a748259194cda95762282d'; 
     const cache = {};
-    const historyPath = []; // 存儲點擊過的單詞對象
+    const historyPath = []; 
     let generatedExamples = [];
+
+    // TTS 播放函數
+    function speak(htmlContent) {
+        // 創建一個臨時元素來提取純文本
+        const temp = document.createElement('div');
+        temp.innerHTML = htmlContent;
+        
+        // 移除 rt 標籤（假名），只保留漢字/原文
+        const rts = temp.querySelectorAll('rt');
+        rts.forEach(rt => rt.remove());
+        
+        const text = temp.innerText;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ja-JP';
+        utterance.rate = 0.9; // 稍微放慢一點速度，方便聽清
+        window.speechSynthesis.speak(utterance);
+    }
 
     async function handleSearch(word, reading = '', meaning = '') {
         const query = word || document.getElementById('input-word').value;
@@ -115,12 +123,9 @@
             const data = await fetchData(query);
             const seen = new Set([data.c.w]);
             data.ext = data.ext.filter(item => (item.w && !seen.has(item.w)) && seen.add(item.w)).slice(0, 8);
-            
             document.getElementById('status').innerText = 'Ready';
             canvas.style.opacity = '1';
             renderMap(data);
-            
-            // 記錄點擊歷史
             updatePath(data.c.w, data.c.r, data.c.m);
             window.scrollTo({top: 0, behavior: 'smooth'});
         } catch (err) {
@@ -172,7 +177,12 @@
         const list = document.getElementById('example-list');
         const card = document.createElement('div');
         card.className = 'example-card';
-        card.innerHTML = `<div class="utility-text mb-2" style="color:var(--accent-pink); font-size:10px;">Context: ${word}</div><div class="ex-jp">${rubyHtml}</div><div class="ex-zh">${zh}</div>`;
+        card.innerHTML = `
+            <div class="play-btn" onclick="speak('${rubyHtml.replace(/'/g, "\\'")}')">Listen —</div>
+            <div class="utility-text mb-2" style="color:var(--accent-pink); font-size:10px;">Context: ${word}</div>
+            <div class="ex-jp">${rubyHtml}</div>
+            <div class="ex-zh">${zh}</div>
+        `;
         list.prepend(card);
     }
 
@@ -205,13 +215,9 @@
     }
 
     function exportData() {
-        if (historyPath.length === 0) return alert("No history to export");
-        
-        let content = `=== INTERACTED GLOSSARY (History) ===\n\n`;
-        historyPath.forEach((item, idx) => {
-            content += `[${idx + 1}] ${item.w} (${item.r}) - ${item.m}\n`;
-        });
-
+        if (historyPath.length === 0) return alert("No history");
+        let content = `=== INTERACTED GLOSSARY ===\n\n`;
+        historyPath.forEach((item, idx) => { content += `[${idx + 1}] ${item.w} (${item.r}) - ${item.m}\n`; });
         if (generatedExamples.length > 0) {
             content += `\n\n=== GENERATED SENTENCES ===\n`;
             generatedExamples.forEach((ex, idx) => {
@@ -219,11 +225,10 @@
                 content += `\n[${idx + 1}] Keyword: ${ex.word}\nJP: ${plainTextJp}\nZH: ${ex.zh}\n`;
             });
         }
-
         const blob = new Blob([content], { type: 'text/plain' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `StudyRecord_${historyPath[historyPath.length-1].w}.txt`;
+        a.download = `StudyRecord.txt`;
         a.click();
     }
 </script>
