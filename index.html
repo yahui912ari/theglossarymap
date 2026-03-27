@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Glossary Map | 語義清單</title>
+    <title>Glossary Map | 語義學習紀錄</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
     <style>
@@ -26,36 +26,38 @@
         #map-canvas, #example-section { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 6px; padding: 10px; }
         
         .node { 
-            background: #ffffff; border: 0.5px solid var(--brand-color); padding: 12px 15px; 
+            background: #ffffff; border: 0.5px solid var(--brand-color); padding: 14px 15px; 
             display: flex; flex-direction: row; justify-content: space-between; align-items: center; 
             width: 100%; transition: all 0.2s; cursor: pointer; box-shadow: 1px 1px 0px rgba(74, 59, 107, 0.1);
         }
 
-        .jp-container { cursor: help; text-align: left; min-width: 100px; }
-        /* 確保單詞方框內的假名也在正上方 */
-        .node ruby { ruby-position: over; }
-        .furigana { font-size: 10px; opacity: 0.6; font-family: var(--font-display); font-style: italic; }
-        .jp-word { font-family: var(--font-jp); font-size: 1.15rem; line-height: 1.2; font-weight: 700; }
+        .jp-container { cursor: help; text-align: left; }
+        .jp-word { font-family: var(--font-jp); font-size: 1.15rem; font-weight: 700; line-height: 2.6; }
         
-        .meaning-text { font-family: var(--font-display); font-style: italic; font-size: 14px; text-align: right; opacity: 0.6; max-width: 50%; border-left: 0.5px solid #eee; padding-left: 10px; }
+        .meaning-text { font-family: var(--font-display); font-style: italic; font-size: 14px; text-align: right; opacity: 0.6; max-width: 55%; border-left: 0.5px solid #eee; padding-left: 10px; }
 
         .example-card { background: #ffffff; border: 0.5px solid var(--brand-color); padding: 18px 15px; width: 100%; margin-bottom: 8px; }
         
-        /* 核心修復：強制假名在漢字正上方 */
-        ruby { ruby-position: over; ruby-align: center; }
+        /* 假名排版核心修復 */
+        ruby { 
+            ruby-position: over; 
+            ruby-align: center; 
+            ruby-overhang: auto; /* 允許長假名適度重疊，保證不換行 */
+        }
         rt { 
             font-family: var(--font-display); 
             font-style: italic; 
-            font-size: 0.65rem; 
+            font-size: 0.58rem; /* 進一步縮小 */
             color: var(--accent-pink); 
             line-height: 1;
-            display: ruby-text; /* 確保渲染模式正確 */
-            padding-bottom: 0.2em;
+            letter-spacing: -0.03em; /* 緊湊排版 */
+            padding-bottom: 0.1em;
+            display: ruby-text;
         }
         .ex-jp { 
             font-family: var(--font-jp); 
             font-size: 1.05rem; 
-            line-height: 2.8; /* 加大行高，給上方的假名留出絕對空間 */
+            line-height: 2.8; 
             margin-bottom: 10px; 
             color: #111; 
         }
@@ -90,7 +92,7 @@
     </main>
 
     <section id="example-section">
-        <div class="utility-text mb-4 opacity-30 text-center">— Sentential Archive —</div>
+        <div class="utility-text mb-4 opacity-30 text-center">— Selected Archive —</div>
         <div id="example-list"></div>
     </section>
 
@@ -99,11 +101,10 @@
 <script>
     const API_KEY = 'sk-f1685a4ad6a748259194cda95762282d'; 
     const cache = {};
-    const historyPath = [];
-    let currentMapData = null;
+    const historyPath = []; // 存儲點擊過的單詞對象
     let generatedExamples = [];
 
-    async function handleSearch(word) {
+    async function handleSearch(word, reading = '', meaning = '') {
         const query = word || document.getElementById('input-word').value;
         if (!query) return;
         document.getElementById('status').innerText = 'Syncing...';
@@ -114,11 +115,13 @@
             const data = await fetchData(query);
             const seen = new Set([data.c.w]);
             data.ext = data.ext.filter(item => (item.w && !seen.has(item.w)) && seen.add(item.w)).slice(0, 8);
-            currentMapData = data;
+            
             document.getElementById('status').innerText = 'Ready';
             canvas.style.opacity = '1';
             renderMap(data);
-            updatePath(data.c.w);
+            
+            // 記錄點擊歷史
+            updatePath(data.c.w, data.c.r, data.c.m);
             window.scrollTo({top: 0, behavior: 'smooth'});
         } catch (err) {
             document.getElementById('status').innerText = 'Retry';
@@ -158,6 +161,7 @@
             const result = await response.json();
             const jsonMatch = result.choices[0].message.content.match(/\{[\s\S]*\}/);
             const data = JSON.parse(jsonMatch ? jsonMatch[0] : result.choices[0].message.content);
+            
             generatedExamples.push({ word, jp: data.ruby_html, zh: data.zh });
             appendExample(word, data.ruby_html, data.zh);
             document.getElementById('status').innerText = 'Ready';
@@ -184,34 +188,42 @@
         div.className = 'node';
         if(isMain) div.style.borderColor = 'var(--accent-pink)';
         div.onclick = () => handleSearch(word);
-        div.innerHTML = `<div class="jp-container" onclick="event.stopPropagation(); fetchExample('${word}')"><div class="furigana">${reading}</div><div class="jp-word">${word}</div></div><div class="meaning-text">${meaning}</div>`;
+        div.innerHTML = `
+            <div class="jp-container" onclick="event.stopPropagation(); fetchExample('${word}')">
+                <ruby class="jp-word">${word}<rt>${reading}</rt></ruby>
+            </div>
+            <div class="meaning-text">${meaning}</div>`;
         return div;
     }
 
-    function updatePath(word) {
-        if (historyPath[historyPath.length - 1] === word) return;
-        historyPath.push(word);
+    function updatePath(word, reading, meaning) {
+        if (historyPath.find(item => item.w === word)) return;
+        historyPath.push({ w: word, r: reading, m: meaning });
         const list = document.getElementById('path-list');
-        list.innerHTML = historyPath.map((w, i) => `<div class="path-step" onclick="handleSearch('${w}')"><span>${i+1}</span> <span>${w}</span></div>`).join('');
+        list.innerHTML = historyPath.map((item, i) => `<div class="path-step" onclick="handleSearch('${item.w}')"><span>${i+1}</span> <span>${item.w}</span></div>`).join('');
         list.scrollLeft = list.scrollWidth;
     }
 
     function exportData() {
-        if (!currentMapData) return alert("No data");
-        let content = `=== GLOSSARY MAP: ${currentMapData.c.w} ===\n\n`;
-        content += `CORE: ${currentMapData.c.w} (${currentMapData.c.r}) - ${currentMapData.c.m}\n`;
-        currentMapData.ext.forEach(i => content += `- ${i.w} (${i.r}): ${i.m}\n`);
+        if (historyPath.length === 0) return alert("No history to export");
+        
+        let content = `=== INTERACTED GLOSSARY (History) ===\n\n`;
+        historyPath.forEach((item, idx) => {
+            content += `[${idx + 1}] ${item.w} (${item.r}) - ${item.m}\n`;
+        });
+
         if (generatedExamples.length > 0) {
-            content += `\n\n=== SENTENCE ARCHIVE ===\n`;
+            content += `\n\n=== GENERATED SENTENCES ===\n`;
             generatedExamples.forEach((ex, idx) => {
                 const plainTextJp = ex.jp.replace(/<ruby>(.*?)<rt>(.*?)<\/rt><\/ruby>/g, '$1($2)');
-                content += `\n[${idx + 1}] ${ex.word}\nJP: ${plainTextJp}\nZH: ${ex.zh}\n`;
+                content += `\n[${idx + 1}] Keyword: ${ex.word}\nJP: ${plainTextJp}\nZH: ${ex.zh}\n`;
             });
         }
+
         const blob = new Blob([content], { type: 'text/plain' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `StudyNote_${currentMapData.c.w}.txt`;
+        a.download = `StudyRecord_${historyPath[historyPath.length-1].w}.txt`;
         a.click();
     }
 </script>
