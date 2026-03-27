@@ -3,122 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Glossary Map | 単語地図</title>
+    <title>Glossary Map | 語義清單</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;600&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #F2EAE0;    
             --brand-color: #4A3B6B; 
-            --accent-blue: #B4D3D9; 
             --accent-pink: #BDA6CE; 
             --font-display: 'Instrument Serif', serif;
-            --font-utility: 'Inter', sans-serif;
             --font-jp: 'Noto Serif JP', serif;
         }
 
-        body { background-color: var(--bg-color); color: var(--brand-color); font-family: var(--font-display); -webkit-font-smoothing: antialiased; margin: 0; padding-bottom: 70px; }
-        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.12; pointer-events: none; z-index: 999; animation: noise-move 0.2s infinite steps(2); }
-        @keyframes noise-move { 0% { transform: translate(0,0); } 100% { transform: translate(1%, 1%); } }
+        body { background-color: var(--bg-color); color: var(--brand-color); font-family: var(--font-display); -webkit-font-smoothing: antialiased; margin: 0; padding-bottom: 120px; display: flex; flex-direction: column; align-items: center; }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.1; pointer-events: none; z-index: 999; }
 
-        .utility-text { font-family: var(--font-utility); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
-        header { position: sticky; top: 0; background: var(--bg-color); border-bottom: 1px solid var(--accent-pink); padding: 10px 12px 6px; z-index: 100; }
-        .huge-input { width: 100%; background: transparent; border: none; font-size: 2.2rem; color: var(--brand-color); outline: none; font-family: var(--font-display); margin-top: 2px; }
-
-        #map-canvas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 8px; }
-        .node { background: rgba(255, 255, 255, 0.4); border: 0.5px solid var(--brand-color); padding: 12px 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 85px; }
+        .utility-text { font-family: var(--font-display); font-style: italic; font-size: 13px; letter-spacing: 0.02em; }
         
-        .type-c { grid-column: span 2; border-width: 1px; background: #fff; min-height: 100px; }
-        .type-drift { border-color: var(--accent-pink); border-style: dashed; } 
-        .type-tech { border-color: var(--accent-blue); background: rgba(180, 211, 217, 0.1); }
+        header { position: sticky; top: 0; width: 100%; max-width: 600px; background: var(--bg-color); border-bottom: 1px solid var(--accent-pink); padding: 10px 15px; z-index: 100; }
+        .huge-input { width: 100%; background: transparent; border: none; font-size: 2.2rem; color: var(--brand-color); outline: none; font-family: var(--font-display); font-style: italic; }
 
-        .jp-container { margin: 2px 0; }
-        .furigana { font-size: 9px; opacity: 0.7; font-family: var(--font-utility); margin-bottom: 1px; }
-        .jp-word { font-family: var(--font-jp); font-size: 1.25rem; line-height: 1.1; font-weight: 700; }
-        .meaning-text { font-size: 9px; font-weight: 600; border-top: 0.5px solid currentColor; margin-top: 6px; padding-top: 4px; width: 85%; }
+        #map-canvas, #example-section { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 6px; padding: 10px; }
+        
+        .node { 
+            background: #ffffff; border: 0.5px solid var(--brand-color); padding: 12px 15px; 
+            display: flex; flex-direction: row; justify-content: space-between; align-items: center; 
+            width: 100%; transition: all 0.2s; cursor: pointer; box-shadow: 1px 1px 0px rgba(74, 59, 107, 0.1);
+        }
 
-        #export-btn { position: fixed; right: 12px; bottom: 80px; width: 45px; height: 45px; background: var(--brand-color); color: var(--bg-color); border: none; display: flex; align-items: center; justify-content: center; font-size: 7px; cursor: pointer; z-index: 1000; opacity: 0; }
-        #export-btn.visible { opacity: 1; }
+        .jp-container { cursor: help; text-align: left; min-width: 100px; }
+        /* 確保單詞方框內的假名也在正上方 */
+        .node ruby { ruby-position: over; }
+        .furigana { font-size: 10px; opacity: 0.6; font-family: var(--font-display); font-style: italic; }
+        .jp-word { font-family: var(--font-jp); font-size: 1.15rem; line-height: 1.2; font-weight: 700; }
+        
+        .meaning-text { font-family: var(--font-display); font-style: italic; font-size: 14px; text-align: right; opacity: 0.6; max-width: 50%; border-left: 0.5px solid #eee; padding-left: 10px; }
 
-        footer { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid var(--accent-blue); display: flex; overflow-x: auto; padding: 10px; gap: 12px; z-index: 100; scrollbar-width: none; }
-        .path-step { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; white-space: nowrap; cursor: pointer; }
+        .example-card { background: #ffffff; border: 0.5px solid var(--brand-color); padding: 18px 15px; width: 100%; margin-bottom: 8px; }
+        
+        /* 核心修復：強制假名在漢字正上方 */
+        ruby { ruby-position: over; ruby-align: center; }
+        rt { 
+            font-family: var(--font-display); 
+            font-style: italic; 
+            font-size: 0.65rem; 
+            color: var(--accent-pink); 
+            line-height: 1;
+            display: ruby-text; /* 確保渲染模式正確 */
+            padding-bottom: 0.2em;
+        }
+        .ex-jp { 
+            font-family: var(--font-jp); 
+            font-size: 1.05rem; 
+            line-height: 2.8; /* 加大行高，給上方的假名留出絕對空間 */
+            margin-bottom: 10px; 
+            color: #111; 
+        }
+        .ex-zh { font-family: var(--font-display); font-style: italic; font-size: 13px; opacity: 0.7; border-top: 0.5px dashed #eee; padding-top: 8px; }
+
+        #export-btn { 
+            position: fixed; bottom: 85px; right: 20px; width: 55px; height: 55px; 
+            background: var(--brand-color); color: #fff; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-family: var(--font-display); font-style: italic; font-size: 12px;
+            cursor: pointer; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+        }
+
+        footer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: rgba(255,255,255,0.9); border-top: 1px solid #ddd; display: flex; overflow-x: auto; padding: 10px; gap: 12px; z-index: 100; scrollbar-width: none; backdrop-filter: blur(5px); }
+        .path-step { font-family: var(--font-display); font-style: italic; font-size: 12px; white-space: nowrap; cursor: pointer; color: var(--brand-color); opacity: 0.6; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="flex justify-between items-center opacity-60">
-            <span class="utility-text">Glossary Map / 単語地図</span>
+        <div class="flex justify-between items-center opacity-60 mb-1">
+            <span class="utility-text">Semantic Discovery</span>
             <span id="status" class="utility-text">Ready</span>
         </div>
         <input type="text" id="input-word" class="huge-input" placeholder="Discovery..." onkeypress="if(event.key==='Enter') handleSearch()">
     </header>
 
-    <button id="export-btn" class="utility-text" onclick="exportToTxt()">Export</button>
+    <div id="export-btn" onclick="exportData()">Export</div>
+
     <main id="map-canvas">
-        <div class="col-span-2 py-16 text-center opacity-30">
-            <p class="text-4xl italic font-light">Delving</p>
-        </div>
+        <div class="py-12 text-center opacity-20"><p class="text-4xl italic">Minimalist</p></div>
     </main>
-    <footer id="path-list" class="utility-text"></footer>
+
+    <section id="example-section">
+        <div class="utility-text mb-4 opacity-30 text-center">— Sentential Archive —</div>
+        <div id="example-list"></div>
+    </section>
+
+    <footer id="path-list"></footer>
 
 <script>
-    const API_KEY = 'sk-f1685a4ad6a748259194cda95762282d';
+    const API_KEY = 'sk-f1685a4ad6a748259194cda95762282d'; 
     const cache = {};
     const historyPath = [];
-    let currentData = null;
-    let lastQuery = "";
+    let currentMapData = null;
+    let generatedExamples = [];
 
     async function handleSearch(word) {
         const query = word || document.getElementById('input-word').value;
         if (!query) return;
-        lastQuery = query;
         document.getElementById('status').innerText = 'Syncing...';
         const canvas = document.getElementById('map-canvas');
-        canvas.style.opacity = '0.4';
+        canvas.style.opacity = '0.3';
         
-        const data = await fetchData(query);
-        
-        document.getElementById('status').innerText = 'Ready';
-        canvas.style.opacity = '1';
-
-        if (data) {
-            // 在渲染前進行 JavaScript 層面的強制去重
-            const uniqueExt = [];
-            const seenWords = new Set([data.c.w]); // 包含中心詞，防止擴展詞重複中心詞
-            
-            data.ext.forEach(item => {
-                if (!seenWords.has(item.w)) {
-                    uniqueExt.push(item);
-                    seenWords.add(item.w);
-                }
-            });
-            data.ext = uniqueExt.slice(0, 8); // 確保最終只有 8 個獨特的詞
-
-            currentData = data;
+        try {
+            const data = await fetchData(query);
+            const seen = new Set([data.c.w]);
+            data.ext = data.ext.filter(item => (item.w && !seen.has(item.w)) && seen.add(item.w)).slice(0, 8);
+            currentMapData = data;
+            document.getElementById('status').innerText = 'Ready';
+            canvas.style.opacity = '1';
             renderMap(data);
             updatePath(data.c.w);
-            document.getElementById('export-btn').classList.add('visible');
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        } catch (err) {
+            document.getElementById('status').innerText = 'Retry';
+            setTimeout(() => handleSearch(query), 1000);
         }
     }
 
     async function fetchData(word) {
         if (cache[word]) return cache[word];
-        
-        // 增加嚴格的唯一性指令
-        const prompt = `Task: Generate 8 UNIQUE Japanese words related to "${word}".
-        Constraints:
-        1. "c": Direct translation.
-        2. "ext": 8 DISTINCT related words.
-        DIVERSITY RULE: Each word in "ext" MUST represent a different concept. 
-        - DO NOT REPEAT ANY WORD.
-        - DO NOT USE KANJI FROM "c".
-        - DIMENSIONS: 1 opposite, 1 biology, 1 social, 1 object, 1 action, 1 feeling, 1 academic, 1 drift.
-        Example: If "c" is "愛嬌", "ext" should be like ["笑顔", "嫉妬", "仮面", "魅了", "拒絶", "ホルモン", "心理學", "鏡"].
-        Output JSON ONLY.`;
+        const prompt = `Return JSON ONLY. 8 UNIQUE Japanese words for "${word}". Structure: {"c":{"w":"Kanji","r":"Hiragana","m":"Meaning"},"ext":[{"w":"Kanji","r":"Hiragana","m":"Meaning"}]}`;
+        const response = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: [{ role: "system", content: prompt }, { role: "user", content: word }],
+                response_format: { type: "json_object" }
+            })
+        });
+        const result = await response.json();
+        return JSON.parse(result.choices[0].message.content);
+    }
 
+    async function fetchExample(word) {
+        document.getElementById('status').innerText = `Context: ${word}`;
+        const prompt = `Return JSON ONLY. Create one COMPLEX N1 Japanese sentence for "${word}". Use <ruby>漢字<rt>かんじ</rt></ruby> tags for EVERY kanji. Format: {"ruby_html":"...","zh":"..."}`;
         try {
-            const res = await fetch('https://api.deepseek.com/chat/completions', {
+            const response = await fetch('https://api.deepseek.com/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
                 body: JSON.stringify({
@@ -127,30 +155,36 @@
                     response_format: { type: "json_object" }
                 })
             });
-            const json = await res.json();
-            const data = JSON.parse(json.choices[0].message.content);
-            cache[word] = data;
-            return data;
-        } catch (e) { return null; }
+            const result = await response.json();
+            const jsonMatch = result.choices[0].message.content.match(/\{[\s\S]*\}/);
+            const data = JSON.parse(jsonMatch ? jsonMatch[0] : result.choices[0].message.content);
+            generatedExamples.push({ word, jp: data.ruby_html, zh: data.zh });
+            appendExample(word, data.ruby_html, data.zh);
+            document.getElementById('status').innerText = 'Ready';
+        } catch (e) { document.getElementById('status').innerText = 'Retry'; }
+    }
+
+    function appendExample(word, rubyHtml, zh) {
+        const list = document.getElementById('example-list');
+        const card = document.createElement('div');
+        card.className = 'example-card';
+        card.innerHTML = `<div class="utility-text mb-2" style="color:var(--accent-pink); font-size:10px;">Context: ${word}</div><div class="ex-jp">${rubyHtml}</div><div class="ex-zh">${zh}</div>`;
+        list.prepend(card);
     }
 
     function renderMap(data) {
         const canvas = document.getElementById('map-canvas');
         canvas.innerHTML = ''; 
-        canvas.appendChild(createNode(data.c.w, data.c.r, data.c.m, 'type-c'));
-        
-        data.ext.forEach((item, index) => {
-            const type = index % 2 === 0 ? 'type-drift' : 'type-tech';
-            const node = createNode(item.w, item.r, item.m, type);
-            node.onclick = () => handleSearch(item.w);
-            canvas.appendChild(node);
-        });
+        canvas.appendChild(createNode(data.c.w, data.c.r, data.c.m, true));
+        data.ext.forEach(item => canvas.appendChild(createNode(item.w, item.r, item.m, false)));
     }
 
-    function createNode(word, reading, meaning, type) {
+    function createNode(word, reading, meaning, isMain) {
         const div = document.createElement('div');
-        div.className = `node ${type}`;
-        div.innerHTML = `<div class="jp-container"><div class="furigana">${reading}</div><div class="jp-word">${word}</div></div><div class="utility-text meaning-text">${meaning}</div>`;
+        div.className = 'node';
+        if(isMain) div.style.borderColor = 'var(--accent-pink)';
+        div.onclick = () => handleSearch(word);
+        div.innerHTML = `<div class="jp-container" onclick="event.stopPropagation(); fetchExample('${word}')"><div class="furigana">${reading}</div><div class="jp-word">${word}</div></div><div class="meaning-text">${meaning}</div>`;
         return div;
     }
 
@@ -158,18 +192,27 @@
         if (historyPath[historyPath.length - 1] === word) return;
         historyPath.push(word);
         const list = document.getElementById('path-list');
-        list.innerHTML = historyPath.map((w, i) => `<div class="path-step" onclick="handleSearch('${w}')"><span>${i+1}</span><span>${w}</span></div>`).join('');
+        list.innerHTML = historyPath.map((w, i) => `<div class="path-step" onclick="handleSearch('${w}')"><span>${i+1}</span> <span>${w}</span></div>`).join('');
         list.scrollLeft = list.scrollWidth;
     }
 
-    function exportToTxt() {
-        if (!currentData) return;
-        let content = `${lastQuery}\n${currentData.c.w} - ${currentData.c.r} - ${currentData.c.m}\n`;
-        currentData.ext.forEach(item => { content += `${item.w} - ${item.r} - ${item.m}\n`; });
+    function exportData() {
+        if (!currentMapData) return alert("No data");
+        let content = `=== GLOSSARY MAP: ${currentMapData.c.w} ===\n\n`;
+        content += `CORE: ${currentMapData.c.w} (${currentMapData.c.r}) - ${currentMapData.c.m}\n`;
+        currentMapData.ext.forEach(i => content += `- ${i.w} (${i.r}): ${i.m}\n`);
+        if (generatedExamples.length > 0) {
+            content += `\n\n=== SENTENCE ARCHIVE ===\n`;
+            generatedExamples.forEach((ex, idx) => {
+                const plainTextJp = ex.jp.replace(/<ruby>(.*?)<rt>(.*?)<\/rt><\/ruby>/g, '$1($2)');
+                content += `\n[${idx + 1}] ${ex.word}\nJP: ${plainTextJp}\nZH: ${ex.zh}\n`;
+            });
+        }
         const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `${lastQuery}_map.txt`; a.click();
+        a.href = URL.createObjectURL(blob);
+        a.download = `StudyNote_${currentMapData.c.w}.txt`;
+        a.click();
     }
 </script>
 </body>
