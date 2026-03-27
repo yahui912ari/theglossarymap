@@ -23,42 +23,15 @@
             font-family: var(--font-display);
             -webkit-font-smoothing: antialiased;
             margin: 0;
-            padding-bottom: 80px;
-            overflow: hidden; /* 密碼輸入前禁止滾動 */
+            padding-bottom: 70px;
         }
-
-        /* 密碼彈窗遮罩 */
-        #lock-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 10000; transition: opacity 0.6s cubic-bezier(0.19, 1, 0.22, 1);
-        }
-        .lock-box {
-            text-align: center;
-            padding: 40px;
-            border: 0.5px solid var(--brand-color);
-            background: white;
-            width: 80%; max-width: 300px;
-        }
-        .pass-input {
-            width: 100%;
-            border: none; border-bottom: 1.5px solid var(--brand-color);
-            background: transparent;
-            font-size: 2rem; text-align: center;
-            color: var(--brand-color);
-            font-family: var(--font-display);
-            outline: none; margin-top: 20px;
-            letter-spacing: 0.5em;
-        }
-        .hidden-ui { opacity: 0; pointer-events: none; }
 
         /* 噪點層 */
         body::before {
             content: "";
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.15; pointer-events: none; z-index: 999;
+            opacity: 0.12; pointer-events: none; z-index: 999;
             animation: noise-move 0.2s infinite steps(2);
         }
         @keyframes noise-move {
@@ -66,85 +39,88 @@
             100% { transform: translate(1%, 1%); }
         }
 
-        .utility-text { font-family: var(--font-utility); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; }
+        .utility-text { font-family: var(--font-utility); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
 
         header {
             position: sticky; top: 0; background: var(--bg-color);
             border-bottom: 1px solid var(--accent-pink);
-            padding: 15px 15px 10px; z-index: 100;
+            padding: 10px 12px 6px; z-index: 100;
         }
 
         .huge-input {
             width: 100%; background: transparent; border: none;
-            font-size: 2.8rem; color: var(--brand-color);
-            outline: none; font-family: var(--font-display); margin-top: 5px;
+            font-size: 2.2rem; color: var(--brand-color);
+            outline: none; font-family: var(--font-display); margin-top: 2px;
         }
 
-        #map-canvas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px; }
+        /* 緊湊網格 */
+        #map-canvas { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 6px; 
+            padding: 8px; 
+        }
 
         .node {
-            background: rgba(255, 255, 255, 0.5); border: 0.5px solid var(--brand-color);
-            padding: 20px 10px; display: flex; flex-direction: column;
+            background: rgba(255, 255, 255, 0.4); 
+            border: 0.5px solid var(--brand-color);
+            padding: 12px 8px; /* 縮減內邊距 */
+            display: flex; flex-direction: column;
             justify-content: center; align-items: center; text-align: center;
-            min-height: 130px;
+            min-height: 90px; /* 顯著減小方框高度 */
+            transition: transform 0.1s ease;
         }
 
-        .type-c { grid-column: span 2; border-width: 1.5px; background: #fff; }
+        .node:active { transform: scale(0.97); background: #fff; }
+
+        .type-c { grid-column: span 2; border-width: 1px; background: #fff; min-height: 110px; }
         .type-a { border-color: var(--accent-pink); border-style: dashed; } 
-        .type-h1 { border-color: var(--accent-blue); background: rgba(180, 211, 217, 0.15); }
+        .type-h1 { border-color: var(--accent-blue); background: rgba(180, 211, 217, 0.1); }
 
-        .jp-container { margin: 5px 0; }
-        .furigana { font-size: 10px; opacity: 0.7; font-family: var(--font-utility); margin-bottom: 2px; }
-        .jp-word { font-family: var(--font-jp); font-size: 1.7rem; line-height: 1.1; font-weight: 700; }
-        .meaning-text { font-size: 10px; font-weight: 600; border-top: 0.5px solid currentColor; margin-top: 10px; padding-top: 6px; width: 80%; }
+        .jp-container { margin: 2px 0; }
+        .furigana { font-size: 9px; opacity: 0.7; font-family: var(--font-utility); margin-bottom: 1px; }
+        .jp-word { font-family: var(--font-jp); font-size: 1.3rem; line-height: 1.1; font-weight: 700; }
+        .meaning-text { font-size: 9px; font-weight: 600; border-top: 0.5px solid currentColor; margin-top: 6px; padding-top: 4px; width: 85%; }
 
+        /* 導出按鈕 - 縮小版 */
         #export-btn {
-            position: fixed; right: 20px; bottom: 90px;
-            width: 55px; height: 55px; background: var(--brand-color);
+            position: fixed; right: 12px; bottom: 80px;
+            width: 45px; height: 45px; background: var(--brand-color);
             color: var(--bg-color); border: none; display: flex;
-            align-items: center; justify-content: center; font-size: 8px;
+            align-items: center; justify-content: center; font-size: 7px;
             cursor: pointer; z-index: 1000; opacity: 0; transition: opacity 0.4s;
         }
         #export-btn.visible { opacity: 1; }
 
         footer {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #fff; border-top: 1px solid var(--accent-blue);
-            display: flex; overflow-x: auto; padding: 15px; gap: 18px; z-index: 100;
+            background: white; border-top: 1px solid var(--accent-blue);
+            display: flex; overflow-x: auto; padding: 10px; gap: 12px; z-index: 100;
+            scrollbar-width: none;
         }
-        .path-step { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; }
+        .path-step { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; white-space: nowrap; }
     </style>
 </head>
 <body>
 
-    <div id="lock-screen">
-        <div class="lock-box">
-            <div class="utility-text">Restricted Access</div>
-            <input type="password" id="passcode" class="pass-input" maxlength="4" placeholder="••••" oninput="checkPass(this)">
-            <div class="utility-text mt-4 opacity-40">Entry Key Required</div>
+    <header>
+        <div class="flex justify-between items-center opacity-60">
+            <span class="utility-text">Glossary Map / 単語地図</span>
+            <span id="status" class="utility-text">Standby</span>
         </div>
-    </div>
+        <input type="text" id="input-word" class="huge-input" placeholder="Discovery" onkeypress="if(event.key==='Enter') handleSearch()">
+    </header>
 
-    <div id="main-content" class="hidden-ui">
-        <header>
-            <div class="flex justify-between items-center opacity-70">
-                <span class="utility-text">Glossary Map / 単語地図</span>
-                <span id="status" class="utility-text">Ready</span>
-            </div>
-            <input type="text" id="input-word" class="huge-input" placeholder="Discovery" onkeypress="if(event.key==='Enter') handleSearch()">
-        </header>
+    <button id="export-btn" class="utility-text" onclick="exportToTxt()">Export</button>
 
-        <button id="export-btn" class="utility-text" onclick="exportToTxt()">Export</button>
+    <main id="map-canvas">
+        <div class="col-span-2 py-16 text-center opacity-30">
+            <p class="text-4xl italic font-light">Delving</p>
+            <p class="utility-text mt-2">Navigate the architecture of meaning</p>
+        </div>
+    </main>
 
-        <main id="map-canvas">
-            <div class="col-span-2 py-24 text-center opacity-30">
-                <p class="text-5xl italic font-light">Delving</p>
-                <p class="utility-text mt-3">Navigate the architecture of meaning</p>
-            </div>
-        </main>
-
-        <footer id="path-list" class="utility-text"></footer>
-    </div>
+    <footer id="path-list" class="utility-text"></footer>
 
 <script>
     const API_KEY = 'sk-f1685a4ad6a748259194cda95762282d';
@@ -152,23 +128,6 @@
     const historyPath = [];
     let currentData = null;
     let lastQuery = "";
-
-    // 密碼檢查
-    function checkPass(el) {
-        if (el.value === '0914') {
-            document.getElementById('lock-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('lock-screen').style.display = 'none';
-                document.getElementById('main-content').style.opacity = '1';
-                document.getElementById('main-content').style.pointerEvents = 'auto';
-                document.body.style.overflow = 'auto';
-            }, 600);
-        } else if (el.value.length === 4) {
-            el.value = '';
-            el.placeholder = 'ERR';
-            setTimeout(() => { el.placeholder = '••••'; }, 1000);
-        }
-    }
 
     async function handleSearch(word) {
         const query = word || document.getElementById('input-word').value;
@@ -195,7 +154,7 @@
 
     async function fetchData(word) {
         if (cache[word]) return cache[word];
-        const prompt = `JSON only: {"c":{"w":"Kanji","r":"Hiragana","m":"Chinese"},"ext":[{"w":"Kanji","r":"Hiragana","m":"Chinese","t":"s/a/h1"}]}. Map English to Japanese. Use semantic drift.`;
+        const prompt = `JSON only: {"c":{"w":"Kanji","r":"Hiragana","m":"Chinese"},"ext":[{"w":"Kanji","r":"Hiragana","m":"Chinese","t":"s/a/h1"}]}. Use semantic drift (1 sci, 1 lit, 1 cat, 2 drift). Avoid repeat.`;
 
         try {
             const res = await fetch('https://api.deepseek.com/chat/completions', {
@@ -262,9 +221,6 @@
         a.download = `${lastQuery}_glossary.txt`;
         a.click();
     }
-
-    // 自動聚焦密碼框
-    window.onload = () => { document.getElementById('passcode').focus(); };
 </script>
 </body>
 </html>
