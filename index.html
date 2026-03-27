@@ -53,7 +53,6 @@
             outline: none; font-family: var(--font-display); margin-top: 2px;
         }
 
-        /* 緊湊網格 */
         #map-canvas { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
@@ -64,25 +63,24 @@
         .node {
             background: rgba(255, 255, 255, 0.4); 
             border: 0.5px solid var(--brand-color);
-            padding: 12px 8px; /* 縮減內邊距 */
+            padding: 12px 8px;
             display: flex; flex-direction: column;
             justify-content: center; align-items: center; text-align: center;
-            min-height: 90px; /* 顯著減小方框高度 */
+            min-height: 85px;
             transition: transform 0.1s ease;
         }
 
         .node:active { transform: scale(0.97); background: #fff; }
 
-        .type-c { grid-column: span 2; border-width: 1px; background: #fff; min-height: 110px; }
+        .type-c { grid-column: span 2; border-width: 1px; background: #fff; min-height: 100px; }
         .type-a { border-color: var(--accent-pink); border-style: dashed; } 
         .type-h1 { border-color: var(--accent-blue); background: rgba(180, 211, 217, 0.1); }
 
         .jp-container { margin: 2px 0; }
         .furigana { font-size: 9px; opacity: 0.7; font-family: var(--font-utility); margin-bottom: 1px; }
-        .jp-word { font-family: var(--font-jp); font-size: 1.3rem; line-height: 1.1; font-weight: 700; }
+        .jp-word { font-family: var(--font-jp); font-size: 1.25rem; line-height: 1.1; font-weight: 700; }
         .meaning-text { font-size: 9px; font-weight: 600; border-top: 0.5px solid currentColor; margin-top: 6px; padding-top: 4px; width: 85%; }
 
-        /* 導出按鈕 - 縮小版 */
         #export-btn {
             position: fixed; right: 12px; bottom: 80px;
             width: 45px; height: 45px; background: var(--brand-color);
@@ -98,6 +96,7 @@
             display: flex; overflow-x: auto; padding: 10px; gap: 12px; z-index: 100;
             scrollbar-width: none;
         }
+        footer::-webkit-scrollbar { display: none; }
         .path-step { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; white-space: nowrap; }
     </style>
 </head>
@@ -106,7 +105,7 @@
     <header>
         <div class="flex justify-between items-center opacity-60">
             <span class="utility-text">Glossary Map / 単語地図</span>
-            <span id="status" class="utility-text">Standby</span>
+            <span id="status" class="utility-text">Ready</span>
         </div>
         <input type="text" id="input-word" class="huge-input" placeholder="Discovery" onkeypress="if(event.key==='Enter') handleSearch()">
     </header>
@@ -154,7 +153,17 @@
 
     async function fetchData(word) {
         if (cache[word]) return cache[word];
-        const prompt = `JSON only: {"c":{"w":"Kanji","r":"Hiragana","m":"Chinese"},"ext":[{"w":"Kanji","r":"Hiragana","m":"Chinese","t":"s/a/h1"}]}. Use semantic drift (1 sci, 1 lit, 1 cat, 2 drift). Avoid repeat.`;
+        
+        // 核心改進：Prompt 增加了多維度發散指令與強制不重復指令
+        const prompt = `You are a Japanese semantic navigator. 
+        For input "${word}":
+        1. "c": Core Japanese translation.
+        2. "ext": Exactly 8 Japanese words.
+        STRATEGY: 
+        - DO NOT repeat the root word. (e.g., If c is "発見", ext must NOT contain "再発見", "大発見").
+        - DIVERSIFY: Include 1 antonym, 2 technical/academic terms, 2 literary/poetic terms, and 3 conceptually related but distant actions or objects (Semantic Drift).
+        Example for "Discovery": Discovery -> Map, Unknown, To Dig, Archaeology, Star (Not just variations of "Discovery").
+        Output JSON: {"c":{"w":"Kanji","r":"Hiragana","m":"Meaning"},"ext":[{"w":"Kanji","r":"Hiragana","m":"Meaning","t":"s/a/h1"}]}`;
 
         try {
             const res = await fetch('https://api.deepseek.com/chat/completions', {
@@ -177,7 +186,9 @@
         const canvas = document.getElementById('map-canvas');
         canvas.innerHTML = ''; 
         canvas.appendChild(createNode(data.c.w, data.c.r, data.c.m, 'type-c'));
-        const types = ['type-h1', 'type-a', 'type-r', 'type-h1', 'type-a', 'type-r'].sort(() => Math.random() - 0.5);
+        
+        // 8個備選詞組
+        const types = ['type-h1', 'type-a', 'type-r', 'type-h1', 'type-a', 'type-r', 'type-h1', 'type-a'];
         data.ext.forEach((item, index) => {
             const node = createNode(item.w, item.r, item.m, types[index] || 'type-r');
             node.onclick = () => handleSearch(item.w);
