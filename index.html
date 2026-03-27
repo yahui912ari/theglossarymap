@@ -17,87 +17,31 @@
             --font-jp: 'Noto Serif JP', serif;
         }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--brand-color);
-            font-family: var(--font-display);
-            -webkit-font-smoothing: antialiased;
-            margin: 0;
-            padding-bottom: 70px;
-        }
-
-        /* 噪點層 */
-        body::before {
-            content: "";
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.12; pointer-events: none; z-index: 999;
-            animation: noise-move 0.2s infinite steps(2);
-        }
-        @keyframes noise-move {
-            0% { transform: translate(0,0); }
-            100% { transform: translate(1%, 1%); }
-        }
+        body { background-color: var(--bg-color); color: var(--brand-color); font-family: var(--font-display); -webkit-font-smoothing: antialiased; margin: 0; padding-bottom: 70px; }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.12; pointer-events: none; z-index: 999; animation: noise-move 0.2s infinite steps(2); }
+        @keyframes noise-move { 0% { transform: translate(0,0); } 100% { transform: translate(1%, 1%); } }
 
         .utility-text { font-family: var(--font-utility); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+        header { position: sticky; top: 0; background: var(--bg-color); border-bottom: 1px solid var(--accent-pink); padding: 10px 12px 6px; z-index: 100; }
+        .huge-input { width: 100%; background: transparent; border: none; font-size: 2.2rem; color: var(--brand-color); outline: none; font-family: var(--font-display); margin-top: 2px; }
 
-        header {
-            position: sticky; top: 0; background: var(--bg-color);
-            border-bottom: 1px solid var(--accent-pink);
-            padding: 10px 12px 6px; z-index: 100;
-        }
-
-        .huge-input {
-            width: 100%; background: transparent; border: none;
-            font-size: 2.2rem; color: var(--brand-color);
-            outline: none; font-family: var(--font-display); margin-top: 2px;
-        }
-
-        #map-canvas { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 6px; 
-            padding: 8px; 
-        }
-
-        .node {
-            background: rgba(255, 255, 255, 0.4); 
-            border: 0.5px solid var(--brand-color);
-            padding: 12px 8px;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center;
-            min-height: 85px;
-            transition: transform 0.1s ease;
-        }
-
-        .node:active { transform: scale(0.97); background: #fff; }
-
+        #map-canvas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 8px; }
+        .node { background: rgba(255, 255, 255, 0.4); border: 0.5px solid var(--brand-color); padding: 12px 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 85px; }
+        
         .type-c { grid-column: span 2; border-width: 1px; background: #fff; min-height: 100px; }
-        .type-a { border-color: var(--accent-pink); border-style: dashed; } 
-        .type-h1 { border-color: var(--accent-blue); background: rgba(180, 211, 217, 0.1); }
+        .type-drift { border-color: var(--accent-pink); border-style: dashed; } 
+        .type-tech { border-color: var(--accent-blue); background: rgba(180, 211, 217, 0.1); }
 
         .jp-container { margin: 2px 0; }
         .furigana { font-size: 9px; opacity: 0.7; font-family: var(--font-utility); margin-bottom: 1px; }
         .jp-word { font-family: var(--font-jp); font-size: 1.25rem; line-height: 1.1; font-weight: 700; }
         .meaning-text { font-size: 9px; font-weight: 600; border-top: 0.5px solid currentColor; margin-top: 6px; padding-top: 4px; width: 85%; }
 
-        #export-btn {
-            position: fixed; right: 12px; bottom: 80px;
-            width: 45px; height: 45px; background: var(--brand-color);
-            color: var(--bg-color); border: none; display: flex;
-            align-items: center; justify-content: center; font-size: 7px;
-            cursor: pointer; z-index: 1000; opacity: 0; transition: opacity 0.4s;
-        }
+        #export-btn { position: fixed; right: 12px; bottom: 80px; width: 45px; height: 45px; background: var(--brand-color); color: var(--bg-color); border: none; display: flex; align-items: center; justify-content: center; font-size: 7px; cursor: pointer; z-index: 1000; opacity: 0; }
         #export-btn.visible { opacity: 1; }
 
-        footer {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; border-top: 1px solid var(--accent-blue);
-            display: flex; overflow-x: auto; padding: 10px; gap: 12px; z-index: 100;
-            scrollbar-width: none;
-        }
-        footer::-webkit-scrollbar { display: none; }
-        .path-step { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; white-space: nowrap; }
+        footer { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid var(--accent-blue); display: flex; overflow-x: auto; padding: 10px; gap: 12px; z-index: 100; scrollbar-width: none; }
+        .path-step { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; white-space: nowrap; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -107,18 +51,15 @@
             <span class="utility-text">Glossary Map / 単語地図</span>
             <span id="status" class="utility-text">Ready</span>
         </div>
-        <input type="text" id="input-word" class="huge-input" placeholder="Discovery" onkeypress="if(event.key==='Enter') handleSearch()">
+        <input type="text" id="input-word" class="huge-input" placeholder="Discovery..." onkeypress="if(event.key==='Enter') handleSearch()">
     </header>
 
     <button id="export-btn" class="utility-text" onclick="exportToTxt()">Export</button>
-
     <main id="map-canvas">
         <div class="col-span-2 py-16 text-center opacity-30">
             <p class="text-4xl italic font-light">Delving</p>
-            <p class="utility-text mt-2">Navigate the architecture of meaning</p>
         </div>
     </main>
-
     <footer id="path-list" class="utility-text"></footer>
 
 <script>
@@ -131,39 +72,50 @@
     async function handleSearch(word) {
         const query = word || document.getElementById('input-word').value;
         if (!query) return;
-
         lastQuery = query;
         document.getElementById('status').innerText = 'Syncing...';
         const canvas = document.getElementById('map-canvas');
         canvas.style.opacity = '0.4';
-
+        
         const data = await fetchData(query);
         
         document.getElementById('status').innerText = 'Ready';
         canvas.style.opacity = '1';
 
         if (data) {
+            // 在渲染前進行 JavaScript 層面的強制去重
+            const uniqueExt = [];
+            const seenWords = new Set([data.c.w]); // 包含中心詞，防止擴展詞重複中心詞
+            
+            data.ext.forEach(item => {
+                if (!seenWords.has(item.w)) {
+                    uniqueExt.push(item);
+                    seenWords.add(item.w);
+                }
+            });
+            data.ext = uniqueExt.slice(0, 8); // 確保最終只有 8 個獨特的詞
+
             currentData = data;
             renderMap(data);
             updatePath(data.c.w);
             document.getElementById('export-btn').classList.add('visible');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 
     async function fetchData(word) {
         if (cache[word]) return cache[word];
         
-        // 核心改進：Prompt 增加了多維度發散指令與強制不重復指令
-        const prompt = `You are a Japanese semantic navigator. 
-        For input "${word}":
-        1. "c": Core Japanese translation.
-        2. "ext": Exactly 8 Japanese words.
-        STRATEGY: 
-        - DO NOT repeat the root word. (e.g., If c is "発見", ext must NOT contain "再発見", "大発見").
-        - DIVERSIFY: Include 1 antonym, 2 technical/academic terms, 2 literary/poetic terms, and 3 conceptually related but distant actions or objects (Semantic Drift).
-        Example for "Discovery": Discovery -> Map, Unknown, To Dig, Archaeology, Star (Not just variations of "Discovery").
-        Output JSON: {"c":{"w":"Kanji","r":"Hiragana","m":"Meaning"},"ext":[{"w":"Kanji","r":"Hiragana","m":"Meaning","t":"s/a/h1"}]}`;
+        // 增加嚴格的唯一性指令
+        const prompt = `Task: Generate 8 UNIQUE Japanese words related to "${word}".
+        Constraints:
+        1. "c": Direct translation.
+        2. "ext": 8 DISTINCT related words.
+        DIVERSITY RULE: Each word in "ext" MUST represent a different concept. 
+        - DO NOT REPEAT ANY WORD.
+        - DO NOT USE KANJI FROM "c".
+        - DIMENSIONS: 1 opposite, 1 biology, 1 social, 1 object, 1 action, 1 feeling, 1 academic, 1 drift.
+        Example: If "c" is "愛嬌", "ext" should be like ["笑顔", "嫉妬", "仮面", "魅了", "拒絶", "ホルモン", "心理學", "鏡"].
+        Output JSON ONLY.`;
 
         try {
             const res = await fetch('https://api.deepseek.com/chat/completions', {
@@ -187,10 +139,9 @@
         canvas.innerHTML = ''; 
         canvas.appendChild(createNode(data.c.w, data.c.r, data.c.m, 'type-c'));
         
-        // 8個備選詞組
-        const types = ['type-h1', 'type-a', 'type-r', 'type-h1', 'type-a', 'type-r', 'type-h1', 'type-a'];
         data.ext.forEach((item, index) => {
-            const node = createNode(item.w, item.r, item.m, types[index] || 'type-r');
+            const type = index % 2 === 0 ? 'type-drift' : 'type-tech';
+            const node = createNode(item.w, item.r, item.m, type);
             node.onclick = () => handleSearch(item.w);
             canvas.appendChild(node);
         });
@@ -199,13 +150,7 @@
     function createNode(word, reading, meaning, type) {
         const div = document.createElement('div');
         div.className = `node ${type}`;
-        div.innerHTML = `
-            <div class="jp-container">
-                <div class="furigana">${reading}</div>
-                <div class="jp-word">${word}</div>
-            </div>
-            <div class="utility-text meaning-text">${meaning}</div>
-        `;
+        div.innerHTML = `<div class="jp-container"><div class="furigana">${reading}</div><div class="jp-word">${word}</div></div><div class="utility-text meaning-text">${meaning}</div>`;
         return div;
     }
 
@@ -213,11 +158,7 @@
         if (historyPath[historyPath.length - 1] === word) return;
         historyPath.push(word);
         const list = document.getElementById('path-list');
-        list.innerHTML = historyPath.map((w, i) => `
-            <div class="path-step" onclick="handleSearch('${w}')">
-                <span style="color:var(--accent-pink)">${i+1}</span><span>${w}</span>
-            </div>
-        `).join('');
+        list.innerHTML = historyPath.map((w, i) => `<div class="path-step" onclick="handleSearch('${w}')"><span>${i+1}</span><span>${w}</span></div>`).join('');
         list.scrollLeft = list.scrollWidth;
     }
 
@@ -228,9 +169,7 @@
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `${lastQuery}_glossary.txt`;
-        a.click();
+        a.href = url; a.download = `${lastQuery}_map.txt`; a.click();
     }
 </script>
 </body>
